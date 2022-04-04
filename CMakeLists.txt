@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.5)
+set(PROJECT_NAME mae)
+project(${PROJECT_NAME})
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIR})
+
+add_executable(mae main.cpp)
+target_link_libraries(mae ${SDL2_LIBRARY})
