@@ -1,7 +1,10 @@
 #include <SDL.h>
+#include <vector>
+#include <utility>
 #include "sdl_wrapper.hpp"
 #include "obstacle.hpp"
 #include "draw.hpp"
+#include "astar.hpp"
 
 int main(int argc, char * args[]) {
     // Screen Dims Constants
@@ -20,6 +23,20 @@ int main(int argc, char * args[]) {
     // Const Draw Object and Drawing the tunnel
     auto draw_obj = Draw(SCREEN_WIDTH, SCREEN_HEIGHT);
     draw_obj.DrawPointsUsingLayer(obstacle_layer_shr_ptr, sdl_obj);
+
+    // Const Astar object and make a path
+    auto astar_obj = Astar();
+    astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT);
+    astar_obj.setGoalPoint(639,479);
+    astar_obj.setStartPoint(0,0);
+    astar_obj.loadObstacleInfo(obstacle_layer_shr_ptr);
+    auto path = astar_obj.makePlanCoordinate();
+
+    // for(int i=0; i < path.size(); i++) {
+    //     std::cout << path[i].first << " " << path[i].second << '\n';
+    // }
+
+    draw_obj.DrawPointsFromCoords(path, sdl_obj);
 
     sdl_obj.show();
 

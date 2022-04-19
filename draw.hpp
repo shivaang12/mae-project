@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <memory>
 #include <vector>
+#include <utility>
 #include "sdl_wrapper.hpp"
 
 class Draw {
@@ -19,6 +20,15 @@ public:
                 int y = i/width_;
                 wrapper.drawPoint(x, y);
             }
+        }
+    }
+
+    void DrawPointsFromCoords(std::vector<std::pair<int, int>>& points, SDLWrapper& wrapper) {
+        // Set Color
+        wrapper.setColor(255, 255, 255);
+        // Draw Points
+        for(int i=0; i < points.size(); i++) {
+            wrapper.drawPoint(points[i].first, points[i].second);
         }
     }
 
