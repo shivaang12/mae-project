@@ -1,3 +1,6 @@
+#ifndef SDL_WRAPPER_HPP
+#define SDL_WRAPPER_HPP
+
 #include <SDL.h>
 
 class SDLWrapper {
@@ -42,6 +45,14 @@ public:
         this->update_and_show();
     }
 
+    void setColor(int R, int G, int B) {
+        SDL_SetRenderDrawColor(renderer_, R, G, B, 0);
+    }
+
+    void drawPoint(int x, int y) {
+        SDL_RenderDrawPoint(renderer_, x, y);
+    }
+
 private:
     // SDL related Variables
     SDL_Window* window_;
@@ -52,3 +63,5 @@ private:
     int width_;
     int height_;
 };
+
+#endif // SDL_WRAPPER_HPP
