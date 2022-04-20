@@ -23,6 +23,13 @@ struct comparator {
   }
 };
 
+
+// 3-Dimentional hypot
+double hypot3(double x, double y, double z)
+{
+    return std::sqrt(x*x + y*y + z*z);
+} 
+
 class Astar
 {
 public:
@@ -31,6 +38,9 @@ public:
      */
     Astar() : width_(0),
               height_(0),
+              max_radius_(0),
+              radius_length_(0),
+              min_radius_(0),
               start_(0),
               goal_(0),
               obstacle_flag(0),
@@ -45,10 +55,15 @@ public:
      * @return Void
      */
     void initialize(const int width,
-                    const int height)
+                    const int height,
+                    const int max_radius,
+                    const int radius_length)
     {
         width_ = width;
         height_ = height;
+        max_radius_ = max_radius;
+        radius_length_ = radius_length;
+        min_radius_ = max_radius - radius_length;
     }
 
     /**
@@ -62,7 +77,10 @@ public:
     void setStartPoint(const int start_x,
                        const int start_y)
     {
-        convertCoordinateToCell(start_x, start_y, start_);
+        // Temporary: Goal Z will always be max_radius
+        int start_z = this->max_radius_;
+
+        convertCoordinateToCell(start_x, start_y, start_z, start_);
     }
 
     /**
@@ -76,16 +94,21 @@ public:
     void setGoalPoint(const int goal_x,
                       const int goal_y)
     {
-        convertCoordinateToCell(goal_x, goal_y, goal_);
+        // Temporary: Goal Z will always be max_radius
+        int goal_z = this->max_radius_;
+
+        convertCoordinateToCell(goal_x, goal_y, goal_z, goal_);
         std::cout << "[ASTAR] GOAL is " << goal_ << '\n';
     }
 
     /**
      * @brief Generates plan from given start and goal points
      */
+    // TODO: Change
     std::vector<int> makePlan()
     {
         std::vector<int> path;
+        std::cout << "[DEBUG] Check 0" << '\n';
 
         // Checking if goal and start is valid
         if (obstacle_info_ptr_)
@@ -96,6 +119,8 @@ public:
             }
         }
 
+        std::cout << "[DEBUG] Check 1" << '\n';
+
         // Open List
         std::priority_queue<
             std::pair<int, double>,
@@ -103,6 +128,8 @@ public:
             comparator>
             open_list;
         open_list.emplace(start_, 0);
+
+        std::cout << "[DEBUG] Check 2" << '\n';
 
         // Dictionary
         std::unordered_map<int, int> parent_dict;
@@ -167,13 +194,13 @@ public:
      *
      * @return Vector of pairs containing x-y coordinates of the plan
      */
-    std::vector<std::pair<int, int>> makePlanCoordinate() {
-        std::vector<std::pair<int, int> > return_vector;
-
+    std::vector<std::tuple<int, int, int> > makePlanCoordinate() {
+        std::vector<std::tuple<int, int, int> > return_vector;
         for (auto& cell : makePlan()) {
-            int x, y;
-            convertCellToCoordinate(cell, x, y);
-            return_vector.emplace_back(x, y);
+            int x, y, z;
+            std::cout << "[DEBUG] " << x << " " << y << " " << z << '\n';
+            convertCellToCoordinate(cell, x, y, z);
+            return_vector.emplace_back(x, y, z);
         }
         return return_vector;
     }
@@ -189,13 +216,15 @@ public:
     double calcGCost(const int &cell1,
                      const int &cell2) const
     {
-        int cell1_x, cell1_y;
-        int cell2_x, cell2_y;
+        int cell1_x, cell1_y, cell1_z;
+        int cell2_x, cell2_y, cell2_z;
 
-        convertCellToCoordinate(cell1, cell1_x, cell1_y);
-        convertCellToCoordinate(cell2, cell2_x, cell2_y);
+        convertCellToCoordinate(cell1, cell1_x, cell1_y, cell1_z);
+        convertCellToCoordinate(cell2, cell2_x, cell2_y, cell2_z);
 
-        return std::hypot(cell1_x - cell2_x, cell1_y - cell2_y);
+        return hypot3(static_cast<double>(cell1_x - cell2_x),
+                      static_cast<double>(cell1_y - cell2_y),
+                      static_cast<double>(cell1_z - cell2_z));
     }
 
     /**
@@ -207,13 +236,15 @@ public:
      */
     double getHCost(const int &cell) const
     {
-        int cell_x, cell_y;
-        int goal_x, goal_y;
+        int cell_x, cell_y, cell_z;
+        int goal_x, goal_y, goal_z;
 
-        convertCellToCoordinate(cell, cell_x, cell_y);
-        convertCellToCoordinate(goal_, goal_x, goal_y);
+        convertCellToCoordinate(cell, cell_x, cell_y, cell_z);
+        convertCellToCoordinate(goal_, goal_x, goal_y, goal_z);
 
-        return std::hypot(cell_x - goal_x, cell_y - goal_y);
+        return hypot3(static_cast<double>(cell_x - goal_x),
+                      static_cast<double>(cell_y - goal_y),
+                      static_cast<double>(cell_z - goal_z));
     }
 
     /**
@@ -225,13 +256,29 @@ public:
      */
     bool isValid(const int &cell) const
     {
+        std::cout << "[DEBUG] isValid 1" << '\n';
+        // Since the cell is 3D-hash version we will convert it to 2D-hash
+        int x, y, z, cell2d;
+        this->convertCellToCoordinate(cell, x, y, z);
+        std::cout << "[DEBUG] Cell" << cell << '\n';
+        cell2d = (y * width_) + x;
+
+        // Now checking for obstacles
+        // We will check in the square of size radius
         if (obstacle_info_ptr_)
         {
-            if ((*obstacle_info_ptr_)[cell] == 1)
+            for(int i=x-z; i<x+z; i++)
             {
-                return false;
-            } else {
-                return true;
+                for(int j=y-z; j<y+z; j++)
+                {
+                    if(std::hypot(i-x, j-y) <= z)
+                    {
+                        if ((*obstacle_info_ptr_)[(y * width_) + x] == 1)
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
         }
         return true;
@@ -246,41 +293,53 @@ public:
      */
     std::vector<int> getNeighbors(const int &current_cell) const
     {
-        int current_x, current_y;
+        int current_x, current_y, current_z;
 
-        convertCellToCoordinate(current_cell, current_x, current_y);
+        const std::array<int, 3> state_change = {1, 0, -1};
+
+        convertCellToCoordinate(current_cell, current_x, current_y, current_z);
         std::vector<int> return_vector;
-        return_vector.reserve(8);
+        return_vector.reserve(26);
 
-        for (int i = current_cell - width_; i <= current_cell + width_; i = i + width_)
+        for (int i : state_change)
         {
-            for (int j = -1; j <= 1; j++)
+            // Corner case for width (x)
+            if((current_x + i < 0) && (current_x + i >= width_))
             {
-                // Handle Corner cases
-                // Right corner
-                if (current_cell % width_ == width_ - 1)
+                continue;
+            }
+
+            for (int j : state_change)
+            {
+                // Corner case for height (y)
+                if((current_y + j < 0) && (current_y + j >= height_))
                 {
-                    if (j > 0)
+                    continue;
+                }
+                
+                for (int k : state_change)
+                {
+                    // Corner case for circle (z)
+                    if((current_z + k < min_radius_) && (current_z + k > max_radius_))
                     {
                         continue;
                     }
-                }
 
-                // Left corner
-                if (current_cell % width_ == 0)
-                {
-                    if (j < 0)
+                    // Make sure this cell is not as current_cell
+                    int current_test_cell = -1;
+                    this->convertCoordinateToCell(current_x+i, current_y+j, current_z+k, current_test_cell);
+
+                    if (current_test_cell == current_cell)
                     {
                         continue;
                     }
-                }
 
-                if ((i + j >= 0) && (i + j < width_ * height_))
-                {
-                    if (isValid(i + j) && (current_cell != (i + j)))
+                    if (current_test_cell >= 0)
                     {
-                        return_vector.emplace_back(i + j);
+                        return_vector.emplace_back(current_test_cell);
                     }
+
+
                 }
             }
         }
@@ -298,9 +357,10 @@ public:
      */
     void convertCoordinateToCell(const int &x,
                                  const int &y,
+                                 const int &z,
                                  int &cell) const
     {
-        cell = (y * width_) + x;
+        cell = (z * height_ * width_) + (y * width_) + x;
     }
 
     /**
@@ -313,10 +373,12 @@ public:
      */
     void convertCellToCoordinate(const int &cell,
                                  int &x,
-                                 int &y) const
+                                 int &y,
+                                 int &z) const
     {
-        x = cell % width_;
+        z = cell / (height_ * width_);
         y = cell / width_;
+        x = cell % width_;
     }
     /**
      * @brief Getter method gets start point
@@ -324,9 +386,9 @@ public:
      * @param[out] start_x X coordinate for start point
      * @param[out] start_y Y coordinate for start point
      */
-    void getStartPoint(int &start_x, int &start_y) const
+    void getStartPoint(int &start_x, int &start_y, int start_z) const
     {
-        convertCellToCoordinate(start_, start_x, start_y);
+        convertCellToCoordinate(start_, start_x, start_y, start_z);
     }
     /**
      * @brief Getter method gets goal point
@@ -334,14 +396,18 @@ public:
      * @param[out] goal_x X coordinate for goal point
      * @param[out] goal_y Y coordinate for goal point
      */
-    void getGoalPoint(int &goal_x, int &goal_y) const
+    void getGoalPoint(int &goal_x, int &goal_y, int &goal_z) const
     {
-        convertCellToCoordinate(goal_, goal_x, goal_y);
+        convertCellToCoordinate(goal_, goal_x, goal_y, goal_z);
     }
 
 private:
     int width_;
     int height_;
+
+    int max_radius_;
+    int radius_length_;
+    int min_radius_;
 
     int start_;
     int goal_;

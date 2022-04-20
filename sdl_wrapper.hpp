@@ -2,6 +2,7 @@
 #define SDL_WRAPPER_HPP
 
 #include <SDL.h>
+#include <cmath>
 
 class SDLWrapper {
 public:
@@ -51,6 +52,19 @@ public:
 
     void drawPoint(int x, int y) {
         SDL_RenderDrawPoint(renderer_, x, y);
+    }
+
+    void drawCircle(int x, int y, int radius) {
+        for (int i=x-radius; i<x+radius; i++)
+        {
+            for(int j=y-radius; j<y+radius; j++)
+            {
+                if((std::hypot(i-x, j-y) < radius) && (std::hypot(i-x, j-y) > (radius-3)))
+                {
+                    drawPoint(i, j);
+                }
+            }
+        }
     }
 
 private:

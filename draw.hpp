@@ -32,6 +32,18 @@ public:
         }
     }
 
+    void DrawPointsFromCoordsTuple(std::vector<std::tuple<int, int, int>>& points, SDLWrapper& wrapper) {
+        // Set Color
+        wrapper.setColor(255, 255, 125);
+        // Draw Points
+        for(int i=0; i < points.size(); i++) {
+            wrapper.setColor(255, 255, 255);
+            wrapper.drawPoint(std::get<0>(points[i]), std::get<1>(points[i]));
+            wrapper.setColor(255, 255, 125);
+            wrapper.drawCircle(std::get<0>(points[i]), std::get<1>(points[i]), std::get<2>(points[i]));
+        }
+    }
+
 private:
     int width_, height_;
 };
