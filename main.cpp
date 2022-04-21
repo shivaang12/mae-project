@@ -28,10 +28,24 @@ int main(int argc, char * args[]) {
     // Const Astar object and make a path
     auto astar_obj = Astar();
     astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 5, 2);
-    astar_obj.setGoalPoint(10,10);
-    astar_obj.setStartPoint(600,400);
-    std::cout << "STarting .." << '\n';
     astar_obj.loadObstacleInfo(obstacle_layer_shr_ptr);
+
+    // int x, y, z, point_cell;
+    // x = 4, y = 4, z = 5;
+    // astar_obj.convertCoordinateToCell(x, y, z, point_cell);
+    // auto neigh = astar_obj.getNeighbors(point_cell);
+
+    // for(auto item : neigh)
+    // {
+    //     int x, y, z;
+    //     astar_obj.convertCellToCoordinate(item, x, y, z);
+    //     bool result = astar_obj.isValid(item);
+    //     std::cout << x << " " << y << " " << z << " " << result << '\n';
+    // }
+
+    astar_obj.setGoalPoint(600,50);
+    astar_obj.setStartPoint(10,10);
+    std::cout << "STarting .." << '\n';
     std::cout << "Making plan .." << '\n';
     auto path = astar_obj.makePlanCoordinate();
 

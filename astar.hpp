@@ -198,8 +198,9 @@ public:
         std::vector<std::tuple<int, int, int> > return_vector;
         for (auto& cell : makePlan()) {
             int x, y, z;
-            std::cout << "[DEBUG] " << x << " " << y << " " << z << '\n';
             convertCellToCoordinate(cell, x, y, z);
+            std::cout << "[DEBUG] " << x << " " << y << " " << z << '\n';
+            std::cout << "[] " << cell << '\n';
             return_vector.emplace_back(x, y, z);
         }
         return return_vector;
@@ -256,11 +257,11 @@ public:
      */
     bool isValid(const int &cell) const
     {
-        std::cout << "[DEBUG] isValid 1" << '\n';
+        // std::cout << "[DEBUG] isValid 1" << '\n';
         // Since the cell is 3D-hash version we will convert it to 2D-hash
         int x, y, z, cell2d;
         this->convertCellToCoordinate(cell, x, y, z);
-        std::cout << "[DEBUG] Cell" << cell << '\n';
+        // std::cout << "[DEBUG] Cell " << x << " " << y << " " << z << '\n';
         cell2d = (y * width_) + x;
 
         // Now checking for obstacles
@@ -273,7 +274,12 @@ public:
                 {
                     if(std::hypot(i-x, j-y) <= z)
                     {
-                        if ((*obstacle_info_ptr_)[(y * width_) + x] == 1)
+                        // std::cout << " INSIDE " << '\n';
+                        if ((i < 0) || (i >= width_) || (j < 0) || (j >= height_))
+                        {
+                            return false;
+                        }
+                        if ((*obstacle_info_ptr_)[(j * width_) + i] == 1)
                         {
                             return false;
                         }
@@ -304,7 +310,7 @@ public:
         for (int i : state_change)
         {
             // Corner case for width (x)
-            if((current_x + i < 0) && (current_x + i >= width_))
+            if((current_x + i < 0) || (current_x + i >= width_))
             {
                 continue;
             }
@@ -312,7 +318,7 @@ public:
             for (int j : state_change)
             {
                 // Corner case for height (y)
-                if((current_y + j < 0) && (current_y + j >= height_))
+                if((current_y + j < 0) || (current_y + j >= height_))
                 {
                     continue;
                 }
@@ -320,7 +326,7 @@ public:
                 for (int k : state_change)
                 {
                     // Corner case for circle (z)
-                    if((current_z + k < min_radius_) && (current_z + k > max_radius_))
+                    if((current_z + k < min_radius_) || (current_z + k > max_radius_))
                     {
                         continue;
                     }
@@ -334,7 +340,7 @@ public:
                         continue;
                     }
 
-                    if (current_test_cell >= 0)
+                    if ((current_test_cell >= 0) && isValid(current_test_cell))
                     {
                         return_vector.emplace_back(current_test_cell);
                     }
@@ -377,8 +383,9 @@ public:
                                  int &z) const
     {
         z = cell / (height_ * width_);
-        y = cell / width_;
-        x = cell % width_;
+        int new_cell = cell - (z * height_ * width_);
+        y = new_cell / width_;
+        x = new_cell % width_;
     }
     /**
      * @brief Getter method gets start point
