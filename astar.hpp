@@ -108,7 +108,7 @@ public:
     std::vector<int> makePlan()
     {
         std::vector<int> path;
-        std::cout << "[DEBUG] Check 0" << '\n';
+        // std::cout << "[DEBUG] Check 0" << '\n';
 
         // Checking if goal and start is valid
         if (obstacle_info_ptr_)
@@ -119,7 +119,7 @@ public:
             }
         }
 
-        std::cout << "[DEBUG] Check 1" << '\n';
+        // std::cout << "[DEBUG] Check 1" << '\n';
 
         // Open List
         std::priority_queue<
@@ -129,7 +129,7 @@ public:
             open_list;
         open_list.emplace(start_, 0);
 
-        std::cout << "[DEBUG] Check 2" << '\n';
+        // std::cout << "[DEBUG] Check 2" << '\n';
 
         // Dictionary
         std::unordered_map<int, int> parent_dict;
@@ -143,6 +143,7 @@ public:
         while (!open_list.empty())
         {
             auto current_cell = open_list.top();
+            // std::cout << current_cell.first << " " << current_cell.second << '\n';
             open_list.pop();
 
             if (current_cell.first == goal_)
@@ -199,8 +200,8 @@ public:
         for (auto& cell : makePlan()) {
             int x, y, z;
             convertCellToCoordinate(cell, x, y, z);
-            std::cout << "[DEBUG] " << x << " " << y << " " << z << '\n';
-            std::cout << "[] " << cell << '\n';
+            // std::cout << "[DEBUG] " << x << " " << y << " " << z << '\n';
+            // std::cout << "[] " << cell << '\n';
             return_vector.emplace_back(x, y, z);
         }
         return return_vector;
@@ -223,9 +224,10 @@ public:
         convertCellToCoordinate(cell1, cell1_x, cell1_y, cell1_z);
         convertCellToCoordinate(cell2, cell2_x, cell2_y, cell2_z);
 
-        return hypot3(static_cast<double>(cell1_x - cell2_x),
-                      static_cast<double>(cell1_y - cell2_y),
-                      static_cast<double>(cell1_z - cell2_z));
+        // return hypot3(static_cast<double>(cell1_x - cell2_x),
+        //               static_cast<double>(cell1_y - cell2_y),
+        //               static_cast<double>(cell1_z - cell2_z));
+        return std::hypot(cell1_x - cell2_x, cell1_y - cell2_y) + (4 * std::abs(cell1_z - cell2_z)) ;
     }
 
     /**
@@ -243,9 +245,7 @@ public:
         convertCellToCoordinate(cell, cell_x, cell_y, cell_z);
         convertCellToCoordinate(goal_, goal_x, goal_y, goal_z);
 
-        return hypot3(static_cast<double>(cell_x - goal_x),
-                      static_cast<double>(cell_y - goal_y),
-                      static_cast<double>(cell_z - goal_z));
+        return std::hypot(cell_x - goal_x, cell_y - goal_y)  + std::abs(cell_z - goal_z) ;
     }
 
     /**

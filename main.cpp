@@ -27,7 +27,7 @@ int main(int argc, char * args[]) {
 
     // Const Astar object and make a path
     auto astar_obj = Astar();
-    astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 5, 2);
+    astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 20, 5);
     astar_obj.loadObstacleInfo(obstacle_layer_shr_ptr);
 
     // int x, y, z, point_cell;
@@ -44,7 +44,7 @@ int main(int argc, char * args[]) {
     // }
 
     astar_obj.setGoalPoint(600,50);
-    astar_obj.setStartPoint(10,10);
+    astar_obj.setStartPoint(40,40);
     std::cout << "STarting .." << '\n';
     std::cout << "Making plan .." << '\n';
     auto path = astar_obj.makePlanCoordinate();
