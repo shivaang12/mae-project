@@ -44,6 +44,11 @@ public:
         }
     }
 
+    void DrawCircle(std::tuple<int, int, int> &point, SDLWrapper& wrapper) {
+        wrapper.setColor(255, 255, 125);
+        wrapper.drawCircle(std::get<0>(point), std::get<1>(point), std::get<2>(point));
+    }
+
 private:
     int width_, height_;
 };

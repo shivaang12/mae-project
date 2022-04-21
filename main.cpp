@@ -27,7 +27,7 @@ int main(int argc, char * args[]) {
 
     // Const Astar object and make a path
     auto astar_obj = Astar();
-    astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 20, 5);
+    astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 22, 5);
     astar_obj.loadObstacleInfo(obstacle_layer_shr_ptr);
 
     // int x, y, z, point_cell;
@@ -43,7 +43,7 @@ int main(int argc, char * args[]) {
     //     std::cout << x << " " << y << " " << z << " " << result << '\n';
     // }
 
-    astar_obj.setGoalPoint(600,50);
+    astar_obj.setGoalPoint(600,400);
     astar_obj.setStartPoint(40,40);
     std::cout << "STarting .." << '\n';
     std::cout << "Making plan .." << '\n';
@@ -53,13 +53,26 @@ int main(int argc, char * args[]) {
     //     std::cout << path[i].first << " " << path[i].second << '\n';
     // }
 
-    draw_obj.DrawPointsFromCoordsTuple(path, sdl_obj);
+    // draw_obj.DrawPointsFromCoordsTuple(path, sdl_obj);
 
     sdl_obj.show();
+
+    int index = 0;
 
     //Wait two seconds
     while (!isquit) {
         isquit = sdl_obj.check_poll_event();
+        if (index < path.size())
+        {
+            auto item = path[index];
+            sdl_obj.clear();
+            draw_obj.DrawPointsUsingLayer(obstacle_layer_shr_ptr, sdl_obj);
+            draw_obj.DrawCircle(item, sdl_obj);
+            sdl_obj.show();
+            sdl_obj.delay(50);
+            ++index;
+        }
+
     }
 
     return 0;

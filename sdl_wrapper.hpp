@@ -41,9 +41,14 @@ public:
         this->show();
     }
 
-    void clear() {
+    void clearAndShow() {
         SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);
         this->update_and_show();
+    }
+
+    void clear() {
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);
+        SDL_RenderClear(this->renderer_);
     }
 
     void setColor(int R, int G, int B) {
@@ -59,12 +64,16 @@ public:
         {
             for(int j=y-radius; j<y+radius; j++)
             {
-                if((std::hypot(i-x, j-y) < radius) && (std::hypot(i-x, j-y) > (radius-3)))
+                if((std::hypot(i-x, j-y) < radius) && (std::hypot(i-x, j-y) > (radius-2)))
                 {
                     drawPoint(i, j);
                 }
             }
         }
+    }
+
+    void delay(int time) {
+        SDL_Delay(time);
     }
 
 private:
