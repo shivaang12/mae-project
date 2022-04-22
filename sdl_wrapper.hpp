@@ -64,7 +64,7 @@ public:
         {
             for(int j=y-radius; j<y+radius; j++)
             {
-                if((std::hypot(i-x, j-y) < radius) && (std::hypot(i-x, j-y) > (radius-2)))
+                if((std::hypot(i-x, j-y) < radius) && (std::hypot(i-x, j-y) > (radius-1)))
                 {
                     drawPoint(i, j);
                 }
@@ -74,6 +74,19 @@ public:
 
     void delay(int time) {
         SDL_Delay(time);
+    }
+
+    void drawSolidCircle(int x, int y, int radius) {
+        for (int i=x-radius; i<x+radius; i++)
+        {
+            for(int j=y-radius; j<y+radius; j++)
+            {
+                if((std::hypot(i-x, j-y) < radius))
+                {
+                    drawPoint(i, j);
+                }
+            }
+        }
     }
 
 private:

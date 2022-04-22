@@ -9,3 +9,5 @@ y = cell//width
 x = cell%width
 
 print(x, y, z, sep=" ")
+import math
+print(math.floor(-0.6))

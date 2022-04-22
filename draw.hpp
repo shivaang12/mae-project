@@ -49,6 +49,12 @@ public:
         wrapper.drawCircle(std::get<0>(point), std::get<1>(point), std::get<2>(point));
     }
 
+    void DrawPointRobot(std::pair<int, int> &&pose, SDLWrapper& wrapper)
+    {
+        wrapper.setColor(125, 255, 125);
+        wrapper.drawSolidCircle(pose.first, pose.second, 2);
+    }
+
 private:
     int width_, height_;
 };
