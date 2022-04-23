@@ -16,18 +16,21 @@ double calculate_norm(double first_var, double second_var) {
 std::pair<double, double> vector_field(
     const std::pair<float, float> &B_vector,
     const std::pair<int, int> &currentPos,
-    const std::vector<std::pair<int, int>> &obstacle_info) {
-    double obstacle_radius = 2;
-    double re = 7;
-    double r = obstacle_radius + re + 7;
+    const std::vector<std::pair<int, int> > &obstacle_info) {
+    double obstacle_radius = 5;
+    double re = 5;
+    double r = obstacle_radius + re + 1;
     double BF = std::pow(obstacle_radius, 2) - std::pow(r, 2);
-    double BZ = std::pow(obstacle_radius, 2) - std::pow(r - 7, 2);
+    double BZ = std::pow(obstacle_radius, 2) - std::pow(r - 1, 2);
 
     double Fx = 0;
     double Fy = 0;
+
+    // Debug
+    double EPSILON = 0.000001;
+
     double sigma_value = 1.0;
     for (auto &xyo : obstacle_info) {
-        std::cout << Fx << " " << Fy << '\n';
         double dx = static_cast<double>(currentPos.first - xyo.first);  //> x axis distance between obstacle and robot
         double dy = static_cast<double>(currentPos.second - xyo.second);  //> y axis distance between obstacle and robot
 
@@ -47,31 +50,37 @@ std::pair<double, double> vector_field(
         float a = B_vector.first * dx + B_vector.second * dy;
 
         if (a >= 0) {
-            Fx += ((1 - sigma) *
-                   ((B_vector.second * dx * dy) - (B_vector.first * dy * dy))) /
-                  calculate_norm(
+            auto Fdenom = calculate_norm(
                       (B_vector.second * dx * dy) - (B_vector.first * dy * dy),
                       (B_vector.second * dx * dy) - (B_vector.first * dx * dx));
+
+            if (std::abs(Fdenom) < EPSILON)
+            {
+                // Do nothing
+            } else {
+                Fx += ((1 - sigma) *
+                   ((B_vector.second * dx * dy) - (B_vector.first * dy * dy))) / Fdenom;
             Fy += (1 - sigma) *
-                  ((B_vector.second * dx * dy) - (B_vector.first * dx * dx)) /
-                  calculate_norm(
-                      (B_vector.second * dx * dy) - (B_vector.first * dy * dy),
-                      (B_vector.second * dx * dy) - (B_vector.first * dx * dx));
+                  ((B_vector.second * dx * dy) - (B_vector.first * dx * dx)) / Fdenom;
+            }
         }
 
         if (a < 0) {
-            Fx +=
-                ((1 - sigma) *
-                 ((-B_vector.first * dx * dx) - (B_vector.first * dy * dy))) /
-                calculate_norm(
+            double Fdenom = calculate_norm(
                     (-B_vector.first * dx * dx) - (B_vector.first * dy * dy),
                     (-B_vector.second * dy * dy) - (B_vector.second * dx * dx));
+            
+            if (std::abs(Fdenom) < EPSILON)
+            {
+                // Do nothing
+            } else {
+                Fx +=
+                ((1 - sigma) *
+                 ((-B_vector.first * dx * dx) - (B_vector.first * dy * dy))) / Fdenom;
             Fy +=
                 ((1 - sigma) *
-                 ((-B_vector.second * dy * dy) - (B_vector.second * dx * dx))) /
-                calculate_norm(
-                    (-B_vector.first * dx * dx) - (B_vector.first * dy * dy),
-                    (-B_vector.second * dy * dy) - (B_vector.second * dx * dx));
+                 ((-B_vector.second * dy * dy) - (B_vector.second * dx * dx))) / Fdenom;
+            }
         }
 
         if (sigma < 1) {
@@ -80,6 +89,8 @@ std::pair<double, double> vector_field(
 
         sigma_value *= sigma;
     }
+
+    std::cout << sigma_value * B_vector.first << " " << Fx << " " << Fy << '\n';
 
     return std::make_pair(Fx - (sigma_value * B_vector.first),
                           Fy - (sigma_value * B_vector.second));
@@ -102,7 +113,7 @@ int main(int argc, char * args[]) {
 
     // Constructing Live Obstacle
     auto live_obstacle = LiveObstacle(6, 6);
-    live_obstacle.configure(395, 240, 1, 0);
+    live_obstacle.configure(395, 240, 0.5, 0);
     auto live_obstacle_points = live_obstacle.getObtaclePoints();
 
     // Const Draw Object and Drawing the tunnel
@@ -139,7 +150,8 @@ int main(int argc, char * args[]) {
 
     // draw_obj.DrawPointsFromCoordsTuple(path, sdl_obj);
 
-    Robot robot_1 = Robot(std::get<0>(path[0]), std::get<1>(path[0]));
+    // Robot robot_1 = Robot(std::get<0>(path[0]), std::get<1>(path[0]));
+    Robot robot_1 = Robot(195, 240);
     draw_obj.DrawPointRobot(robot_1.getPoseByPair(), sdl_obj);
     draw_obj.DrawPointsFromCoords(live_obstacle_points, sdl_obj);
     sdl_obj.show();
@@ -166,7 +178,7 @@ int main(int argc, char * args[]) {
 
             std::vector<std::pair<int, int>> obstacle_list;
             obstacle_list.reserve(circle_obst_list.size() + live_obstacle_points.size());
-            obstacle_list.insert(obstacle_list.end(), circle_obst_list.begin(), circle_obst_list.end());
+            // obstacle_list.insert(obstacle_list.end(), circle_obst_list.begin(), circle_obst_list.end());
             obstacle_list.insert(obstacle_list.end(), live_obstacle_points.begin(), live_obstacle_points.end());
 
 
@@ -180,6 +192,8 @@ int main(int argc, char * args[]) {
 
             std::pair<double, double> direction_vector = {std::get<0>(item_current) - std::get<0>(item_previous), 
                                                           std::get<1>(item_current) - std::get<1>(item_previous)};
+            direction_vector = {-0.5, 0};
+            current_pose = robot_1.getPoseByPair();
             // direction_vector.first = (direction_vector.first/calculate_norm(direction_vector.first, direction_vector.second));
             // direction_vector.second = (direction_vector.second/calculate_norm(direction_vector.first, direction_vector.second));
             // std::cout << direction_vector.first << " " << direction_vector.second << '\n';
@@ -192,14 +206,15 @@ int main(int argc, char * args[]) {
             total_vec_y = (change_.second/calculate_norm(change_.first, change_.second));
 
             robot_1.change_pose_by(total_vec_x, total_vec_y);
+            // robot_1.print_robot_path();
 
-            // std::cout << std::abs(total_vec_x) << " " << std::abs(total_vec_y) << '\n';
+            std::cout << total_vec_x << " " << total_vec_y << '\n';
             
 
             // Drawing ...
             sdl_obj.clear();
             draw_obj.DrawPointsUsingLayer(obstacle_layer_shr_ptr, sdl_obj);
-            draw_obj.DrawCircle(item_previous, sdl_obj);
+            // draw_obj.DrawCircle(item_previous, sdl_obj);
             draw_obj.DrawPointsFromCoords(live_obstacle_points, sdl_obj);
             draw_obj.DrawPointRobot(robot_1.getPoseByPair(), sdl_obj);
 

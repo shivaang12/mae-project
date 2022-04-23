@@ -9,6 +9,7 @@
 #include <limits>
 #include <algorithm>
 #include <queue>
+#include <array>
 
 
 struct comparator {

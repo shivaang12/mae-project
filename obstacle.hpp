@@ -57,7 +57,7 @@ class LiveObstacle {
 public:
     LiveObstacle(int x_size, int y_size):x_size(x_size), y_size(y_size) {}
 
-    void configure(int start_x, int start_y, int dx, int dy)
+    void configure(double start_x, double start_y, double dx, double dy)
     {
         this->start_x = start_x;
         this->start_y = start_y;
@@ -89,5 +89,6 @@ public:
 
 
 private:
-    int x_size, y_size, start_x, start_y, dx, dy;
+    int x_size, y_size;
+    double start_x, start_y, dx, dy;
 };

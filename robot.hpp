@@ -1,4 +1,5 @@
 #include <utility>
+#include <iostream>
 
 struct Position {
     Position(double x, double y) : x_(x), y_(y) {}
@@ -19,13 +20,18 @@ public:
     }
 
     void change_pose_by(double dx, double dy) {
-        this->pos_.x_ -= dx;
-        this->pos_.y_ -= dy;
+        this->pos_.x_ += dx;
+        this->pos_.y_ += dy;
     }
 
     std::pair<double, double> getPoseByPair()
     {
         return std::make_pair(this->pos_.x_, this->pos_.y_);
+    }
+
+    void print_robot_path()
+    {
+        std::cout << this->pos_.x_ << " " << this->pos_.y_ << '\n';
     }
 
 private:
