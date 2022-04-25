@@ -19,11 +19,11 @@ std::pair<double, double> vector_field(
     const std::pair<float, float> &B_vector,
     const std::pair<int, int> &currentPos,
     const std::vector<std::pair<int, int> > &obstacle_info) {
-    double obstacle_radius = 5;
-    double re = 5;
-    double r = obstacle_radius + re + 1;
+    double obstacle_radius = 4;
+    double re = 6;
+    double r = obstacle_radius + re + 10;
     double BF = std::pow(obstacle_radius, 2) - std::pow(r, 2);
-    double BZ = std::pow(obstacle_radius, 2) - std::pow(r - 1, 2);
+    double BZ = std::pow(obstacle_radius, 2) - std::pow(r - 10, 2);
 
     double Fx = 0;
     double Fy = 0;
@@ -127,16 +127,16 @@ int main(int argc, char * args[]) {
     astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 22, 5);
     astar_obj.loadObstacleInfo(obstacle_layer_shr_ptr);
 
-    // astar_obj.setGoalPoint(370,240);
-    // astar_obj.setStartPoint(250,140);
-    astar_obj.setGoalPoint(80,80);
-    astar_obj.setStartPoint(40,40);
+    astar_obj.setGoalPoint(370,240);
+    astar_obj.setStartPoint(250,140);
+    // astar_obj.setGoalPoint(80,80);
+    // astar_obj.setStartPoint(40,40);
     std::cout << "Starting .." << '\n';
     std::cout << "Making plan .." << '\n';
     auto path = astar_obj.makePlanCoordinate();
 
     // Robot
-    Group grp(40, 40, 4, 22);
+    Group grp(250, 140, 4, 22);
     auto robots = grp.getRobotVector();
 
     // Controller
@@ -160,6 +160,9 @@ int main(int argc, char * args[]) {
     while (!isquit) {
         isquit = sdl_obj.check_poll_event();
 
+        live_obstacle.next();
+        live_obstacle_points  = live_obstacle.getObtaclePoints();
+
         // ******OBSTACLE********
         std::vector<std::pair<int, int>> obstacle_list;
         obstacle_list.reserve(obstacle_points_list->size() + live_obstacle_points.size());
@@ -171,20 +174,32 @@ int main(int argc, char * args[]) {
         std::vector<std::pair<double, double>> obstacle_change_vector;
         auto robots = grp.getRobotVector();
 
-        // for(int i=0; i<grp.getNumberOfRobots(); i++)
-        // {
-        //     auto obst_change_vec = vector_field(change_vectors[i], robots[i], obstacle_list);
-        //     std::pair<double, double> total_vec = {0.0, 0.0};
-        //     total_vec.first = (obst_change_vec.first/calculate_norm(obst_change_vec.first, obst_change_vec.second));
-        //     total_vec.second = (obst_change_vec.second/calculate_norm(obst_change_vec.first, obst_change_vec.second));
-        //     obstacle_change_vector.emplace_back(total_vec);
-        // }
+        for(int i=0; i<grp.getNumberOfRobots(); i++)
+        {
+            auto change_vec_neg = change_vectors[i];
+            if ((change_vec_neg.first < 0.0001) && (change_vec_neg.second < 0.0001))
+            {
+                obstacle_change_vector.emplace_back(change_vec_neg.first, change_vec_neg.second);
+            }
+            else
+            {
+                change_vec_neg.first = - change_vec_neg.first;
+                change_vec_neg.second = - change_vec_neg.second;
+                auto obst_change_vec = vector_field(change_vec_neg, robots[i], obstacle_list);
+                std::cout << obst_change_vec.first << " " << obst_change_vec.second << '\n';
+                std::pair<double, double> total_vec = {0.0, 0.0};
+                total_vec.first = (obst_change_vec.first/calculate_norm(obst_change_vec.first, obst_change_vec.second));
+                total_vec.second = (obst_change_vec.second/calculate_norm(obst_change_vec.first, obst_change_vec.second));
+                obstacle_change_vector.emplace_back(total_vec);
+            }
+        }
 
-        // grp.updateRobotPosition(obstacle_change_vector);
-        grp.updateRobotPosition(change_vectors);
+        grp.updateRobotPosition(obstacle_change_vector);
+        // grp.updateRobotPosition(change_vectors);
         robots = grp.getRobotVector();
 
         sdl_obj.clear();
+        draw_obj.DrawPointsUsingLayer(obstacle_layer_shr_ptr, sdl_obj);
 
         for(const auto &item:robots)
         {
@@ -195,10 +210,14 @@ int main(int argc, char * args[]) {
         // std::cout << '\n';
 
         auto circle_info = grp.getCircleInfo();
-        // draw_obj.DrawCircle(std::make_tuple(circle_info), sdl_obj);
+        auto new_circle_info = std::make_tuple(static_cast<int>(std::get<0>(circle_info)),
+                                            static_cast<int>(std::get<1>(circle_info)),
+                                            static_cast<int>(std::get<2>(circle_info)));
+        draw_obj.DrawCircle(new_circle_info, sdl_obj);
+        draw_obj.DrawPointsFromCoords(live_obstacle_points, sdl_obj);
 
         sdl_obj.show();
-        sdl_obj.delay(100);
+        sdl_obj.delay(200);
 
         // if (index < (path.size() - 1))
         // {

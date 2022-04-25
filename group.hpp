@@ -60,6 +60,31 @@ public:
 
     }
 
+    void updateCenter()
+    {
+        int max_index = 0;
+        double max_distance_x = robots[max_index].first-center_x;
+        double max_distance_y = robots[max_index].second-center_y;
+        double max_radius = std::hypot(max_distance_x, max_distance_y);
+
+        for(int i=1; i<robots.size(); i++)
+        {
+            max_distance_x = robots[i].first-center_x;
+            max_distance_y = robots[i].second-center_y;
+            if(std::hypot(max_distance_x, max_distance_y) > max_radius)
+            {
+                max_radius = std::hypot(max_distance_x, max_distance_y);
+            }
+        }
+
+        radius = max_radius;
+    }
+
+    void updateCenterManualOverride(double rad)
+    {
+        radius = rad;
+    }
+
     int getNumberOfRobots()
     {
         return robots.size();

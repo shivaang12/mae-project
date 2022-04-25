@@ -64,8 +64,8 @@ public:
         current_r = std::get<2>(info);
         int min_index = find_closest_index(current_x, current_y);
 
-        std::cout << last_index << " " << min_index << '\n';
-        std::cout << current_x << " " << current_y << '\n';
+        // std::cout << last_index << " " << min_index << '\n';
+        // std::cout << current_x << " " << current_y << '\n';
 
         int target_index = min_index + 1;
 
@@ -100,7 +100,7 @@ public:
         double dx = target_x-current_x;
         double dy = target_y-current_y;
         double dr = target_r-current_r;
-        std::cout << dr << '\n';
+        // std::cout << dr << '\n';
 
         // Now limit -1 <= {dx, dy} <= 1
         if ((dx < 0) && (dx < -1))
@@ -176,27 +176,43 @@ public:
         auto info = robots.getCircleInfo();
         auto robot_vector = robots.getRobotVector();
 
-        int max_index = 1;
+        int max_index = 0;
+        double max_distance_x = robot_vector[max_index].first-std::get<0>(info);
+        double max_distance_y = robot_vector[max_index].second-std::get<1>(info);
+        double max_radius = std::hypot(max_distance_x, max_distance_y);
 
         for(int i=1; i<robot_vector.size(); i++)
         {
-            if(std::hypot(robot_vector[max_index].first-std::get<0>(info), robot_vector[max_index].second-std::get<1>(info)) < )
+            max_distance_x = robot_vector[i].first-std::get<0>(info);
+            max_distance_y = robot_vector[i].second-std::get<1>(info);
+            if(std::hypot(max_distance_x, max_distance_y) > max_radius)
+            {
+                max_radius = std::hypot(max_distance_x, max_distance_y);
+            }
         }
 
-        std::vector<std::pair<double, double> > returnVector;
-        returnVector.reserve(robot_vector.size());
-
-        for (const auto &item : robot_vector)
+        if (std::get<2>(info) - dr > max_radius)
         {
-            double x, y;
-            x = item.first - std::get<0>(info);
-            y = item.second - std::get<1>(info);
-            double dx = ((std::get<2>(info)-dr)/std::get<2>(info)) * x;
-            double dy = ((std::get<2>(info)-dr)/std::get<2>(info)) * y;
-            returnVector.emplace_back(dx, dy);
-        }
+            robots.updateCenterManualOverride(std::get<2>(info) + dr);
+            std::vector<std::pair<double, double> > returnVector(robots.getNumberOfRobots(), std::make_pair(0.0, 0.0));
+            return returnVector;
+        } else {
+            std::cout << "ACTUALLY SCALLING" << '\n';
+            std::vector<std::pair<double, double> > returnVector;
+            returnVector.reserve(robot_vector.size());
 
-        return returnVector;
+            for (const auto &item : robot_vector)
+            {
+                double x, y;
+                x = item.first - std::get<0>(info);
+                y = item.second - std::get<1>(info);
+                double dx = ((std::get<2>(info)+dr)/std::get<2>(info)) * x;
+                double dy = ((std::get<2>(info)+dr)/std::get<2>(info)) * y;
+                returnVector.emplace_back(-dx, -dy);
+            }
+
+            return returnVector;
+        }
     }
 
     int find_closest_index(double x, double y)
