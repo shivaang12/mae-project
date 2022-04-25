@@ -8,6 +8,8 @@
 #include "draw.hpp"
 #include "astar.hpp"
 #include "robot.hpp"
+#include "group.hpp"
+#include "controller.hpp"
 
 double calculate_norm(double first_var, double second_var) {
     return std::sqrt(std::pow(first_var, 2) + std::pow(second_var, 2));
@@ -90,7 +92,7 @@ std::pair<double, double> vector_field(
         sigma_value *= sigma;
     }
 
-    std::cout << sigma_value * B_vector.first << " " << Fx << " " << Fy << '\n';
+    // std::cout << sigma_value * B_vector.first << " " << Fx << " " << Fy << '\n';
 
     return std::make_pair(Fx - (sigma_value * B_vector.first),
                           Fy - (sigma_value * B_vector.second));
@@ -125,103 +127,128 @@ int main(int argc, char * args[]) {
     astar_obj.initialize(SCREEN_WIDTH, SCREEN_HEIGHT, 22, 5);
     astar_obj.loadObstacleInfo(obstacle_layer_shr_ptr);
 
-    // int x, y, z, point_cell;
-    // x = 4, y = 4, z = 5;
-    // astar_obj.convertCoordinateToCell(x, y, z, point_cell);
-    // auto neigh = astar_obj.getNeighbors(point_cell);
-
-    // for(auto item : neigh)
-    // {
-    //     int x, y, z;
-    //     astar_obj.convertCellToCoordinate(item, x, y, z);
-    //     bool result = astar_obj.isValid(item);
-    //     std::cout << x << " " << y << " " << z << " " << result << '\n';
-    // }
-
-    astar_obj.setGoalPoint(370,240);
-    astar_obj.setStartPoint(250,140);
-    std::cout << "STarting .." << '\n';
+    // astar_obj.setGoalPoint(370,240);
+    // astar_obj.setStartPoint(250,140);
+    astar_obj.setGoalPoint(80,80);
+    astar_obj.setStartPoint(40,40);
+    std::cout << "Starting .." << '\n';
     std::cout << "Making plan .." << '\n';
     auto path = astar_obj.makePlanCoordinate();
 
-    // for(int i=0; i < path.size(); i++) {
-    //     std::cout << path[i].first << " " << path[i].second << '\n';
-    // }
+    // Robot
+    Group grp(40, 40, 4, 22);
+    auto robots = grp.getRobotVector();
 
-    // draw_obj.DrawPointsFromCoordsTuple(path, sdl_obj);
+    // Controller
+    Controller ctrl;
+    ctrl.register_path(path);
 
-    // Robot robot_1 = Robot(std::get<0>(path[0]), std::get<1>(path[0]));
-    Robot robot_1 = Robot(195, 240);
-    draw_obj.DrawPointRobot(robot_1.getPoseByPair(), sdl_obj);
+    for(const auto &item : robots)
+    {
+        draw_obj.DrawPointRobot(item, sdl_obj);
+    }
+
+    
     draw_obj.DrawPointsFromCoords(live_obstacle_points, sdl_obj);
     sdl_obj.show();
 
     int index = 1;
 
-    // Robot
 
 
     //Wait two seconds
     while (!isquit) {
         isquit = sdl_obj.check_poll_event();
-        if (index < (path.size() - 1))
+
+        // ******OBSTACLE********
+        std::vector<std::pair<int, int>> obstacle_list;
+        obstacle_list.reserve(obstacle_points_list->size() + live_obstacle_points.size());
+        obstacle_list.insert(obstacle_list.end(), obstacle_points_list->begin(), obstacle_points_list->end());
+        obstacle_list.insert(obstacle_list.end(), live_obstacle_points.begin(), live_obstacle_points.end());
+
+        //
+        auto change_vectors = ctrl.getRobotPose(grp);
+        std::vector<std::pair<double, double>> obstacle_change_vector;
+        auto robots = grp.getRobotVector();
+
+        // for(int i=0; i<grp.getNumberOfRobots(); i++)
+        // {
+        //     auto obst_change_vec = vector_field(change_vectors[i], robots[i], obstacle_list);
+        //     std::pair<double, double> total_vec = {0.0, 0.0};
+        //     total_vec.first = (obst_change_vec.first/calculate_norm(obst_change_vec.first, obst_change_vec.second));
+        //     total_vec.second = (obst_change_vec.second/calculate_norm(obst_change_vec.first, obst_change_vec.second));
+        //     obstacle_change_vector.emplace_back(total_vec);
+        // }
+
+        // grp.updateRobotPosition(obstacle_change_vector);
+        grp.updateRobotPosition(change_vectors);
+        robots = grp.getRobotVector();
+
+        sdl_obj.clear();
+
+        for(const auto &item:robots)
         {
-            auto item_previous = path[index-1];
-            std::pair<int, int> current_pose = {std::get<0>(item_previous), std::get<1>(item_previous)};
-            auto item_current = path[index];
-            auto circle_obst_list = obstacle_layer_object.getCirclePoints(std::get<0>(item_previous),
-                std::get<1>(item_previous), std::get<2>(item_previous));
+            // std::cout << item.first << " " << item.second << '\t';
+            draw_obj.DrawPointRobot(item, sdl_obj);
+        }
 
-            // Vector Field Variables
-            live_obstacle.next();
-            live_obstacle_points  = live_obstacle.getObtaclePoints();
+        // std::cout << '\n';
 
-            std::vector<std::pair<int, int>> obstacle_list;
-            obstacle_list.reserve(circle_obst_list.size() + live_obstacle_points.size());
-            // obstacle_list.insert(obstacle_list.end(), circle_obst_list.begin(), circle_obst_list.end());
-            obstacle_list.insert(obstacle_list.end(), live_obstacle_points.begin(), live_obstacle_points.end());
+        auto circle_info = grp.getCircleInfo();
+        // draw_obj.DrawCircle(std::make_tuple(circle_info), sdl_obj);
 
+        sdl_obj.show();
+        sdl_obj.delay(100);
 
+        // if (index < (path.size() - 1))
+        // {
+        //     auto item_previous = path[index-1];
+        //     std::pair<int, int> current_pose = {std::get<0>(item_previous), std::get<1>(item_previous)};
+        //     auto item_current = path[index];
+        //     auto circle_obst_list = obstacle_layer_object.getCirclePoints(std::get<0>(item_previous),
+        //         std::get<1>(item_previous), std::get<2>(item_previous));
 
-            // DEBUG
-            // std::cout << "[DEBUG]" << '\n';
-            // for(auto itemm : live_obstacle_points)
-            // {
-            //     std::cout << itemm.first << " " << itemm.second << '\n';
-            // }
+        //     // Vector Field Variables
+        //     live_obstacle.next();
+        //     live_obstacle_points  = live_obstacle.getObtaclePoints();
 
-            std::pair<double, double> direction_vector = {std::get<0>(item_current) - std::get<0>(item_previous), 
-                                                          std::get<1>(item_current) - std::get<1>(item_previous)};
-            direction_vector = {-0.5, 0};
-            current_pose = robot_1.getPoseByPair();
-            // direction_vector.first = (direction_vector.first/calculate_norm(direction_vector.first, direction_vector.second));
-            // direction_vector.second = (direction_vector.second/calculate_norm(direction_vector.first, direction_vector.second));
-            // std::cout << direction_vector.first << " " << direction_vector.second << '\n';
-            // std::cout << direction_vector.first << " " << direction_vector.second << '\n';
-            auto change_ = vector_field(direction_vector, current_pose, obstacle_list);
-            // std::cout << change_.first << " " << change_.second << '\n';
+        //     std::vector<std::pair<int, int>> obstacle_list;
+        //     obstacle_list.reserve(circle_obst_list.size() + live_obstacle_points.size());
+        //     obstacle_list.insert(obstacle_list.end(), circle_obst_list.begin(), circle_obst_list.end());
+        //     obstacle_list.insert(obstacle_list.end(), live_obstacle_points.begin(), live_obstacle_points.end());
 
-            double total_vec_x, total_vec_y;
-            total_vec_x = (change_.first/calculate_norm(change_.first, change_.second));
-            total_vec_y = (change_.second/calculate_norm(change_.first, change_.second));
+        //     std::pair<double, double> direction_vector = {std::get<0>(item_current) - std::get<0>(item_previous), 
+        //                                                   std::get<1>(item_current) - std::get<1>(item_previous)};
+        //     direction_vector = {-0.5, 0};
+        //     current_pose = robot_1.getPoseByPair();
+        //     // direction_vector.first = (direction_vector.first/calculate_norm(direction_vector.first, direction_vector.second));
+        //     // direction_vector.second = (direction_vector.second/calculate_norm(direction_vector.first, direction_vector.second));
+        //     // std::cout << direction_vector.first << " " << direction_vector.second << '\n';
+        //     // std::cout << direction_vector.first << " " << direction_vector.second << '\n';
+        //     auto change_ = vector_field(direction_vector, current_pose, obstacle_list);
+        //     // std::cout << change_.first << " " << change_.second << '\n';
 
-            robot_1.change_pose_by(total_vec_x, total_vec_y);
-            // robot_1.print_robot_path();
+        //     double total_vec_x, total_vec_y;
+        //     total_vec_x = (change_.first/calculate_norm(change_.first, change_.second));
+        //     total_vec_y = (change_.second/calculate_norm(change_.first, change_.second));
 
-            std::cout << total_vec_x << " " << total_vec_y << '\n';
+        //     robot_1.change_pose_by(total_vec_x, total_vec_y);
+        //     // robot_1.print_robot_path();
+
+        //     std::cout << total_vec_x << " " << total_vec_y << '\n';
             
 
-            // Drawing ...
-            sdl_obj.clear();
-            draw_obj.DrawPointsUsingLayer(obstacle_layer_shr_ptr, sdl_obj);
-            // draw_obj.DrawCircle(item_previous, sdl_obj);
-            draw_obj.DrawPointsFromCoords(live_obstacle_points, sdl_obj);
-            draw_obj.DrawPointRobot(robot_1.getPoseByPair(), sdl_obj);
+        //     // Drawing ...
+        //     sdl_obj.clear();
+        //     draw_obj.DrawPointsUsingLayer(obstacle_layer_shr_ptr, sdl_obj);
+        //     // draw_obj.DrawCircle(item_previous, sdl_obj);
+        //     draw_obj.DrawPointsFromCoords(live_obstacle_points, sdl_obj);
+        //     draw_obj.DrawPointRobot(robot_1.getPoseByPair(), sdl_obj);
 
-            sdl_obj.show();
-            sdl_obj.delay(50);
-            ++index;
-        }
+        //     sdl_obj.show();
+        //     sdl_obj.delay(50);
+        //     ++index;
+        // }
 
     }
 

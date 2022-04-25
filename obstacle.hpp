@@ -1,5 +1,9 @@
+#ifndef OBSTACLE_HPP
+#define OBSTACLE_HPP
+
 #include <vector>
 #include <memory>
+#include <cmath>
 
 class Obstacle {
 public:
@@ -92,3 +96,4 @@ private:
     int x_size, y_size;
     double start_x, start_y, dx, dy;
 };
+#endif // OBSTACLE_HPP
